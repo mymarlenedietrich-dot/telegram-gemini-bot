@@ -1,20 +1,27 @@
 import telebot
-import google.generativeai as genai
 import os
+from groq import Groq
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-1.5-pro")
+client = Groq(api_key=GROQ_API_KEY)
 
 @bot.message_handler(func=lambda m: True)
 def handle_message(message):
     try:
-        response = model.generate_content(message.text)
-        bot.send_message(message.chat.id, response.text)
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "user", "content": message.text}
+            ],
+            model="llama3-8b-8192",
+        )
+        bot.send_message(
+            message.chat.id,
+            chat_completion.choices[0].message.content
+        )
     except Exception as e:
         bot.send_message(message.chat.id, "Ошибка 😢")
 
